@@ -31,12 +31,14 @@ class AnalysisRunner:
         self,
         portfolio: Portfolio,
         progress_callback: Any | None = None,
+        result_callback: Any | None = None,
     ) -> dict[str, TickerAnalysisResult]:
         """Run analysis for all tickers in portfolio.
 
         Args:
             portfolio: Portfolio to analyze.
             progress_callback: Optional callback(ticker, stage) for progress updates.
+            result_callback: Optional callback(ticker, result) called when each ticker finishes.
 
         Returns:
             Dict mapping ticker to analysis result.
@@ -70,6 +72,8 @@ class AnalysisRunner:
         for task in asyncio.as_completed(tasks):
             ticker, result = await task
             results[ticker] = result
+            if result_callback:
+                await result_callback(ticker, result)
             if progress_callback:
                 await progress_callback(ticker, "complete")
 

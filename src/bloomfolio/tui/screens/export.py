@@ -1,4 +1,4 @@
-"""Export screen."""
+"""Export modal."""
 
 from __future__ import annotations
 
@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING
 
 from textual.binding import Binding
 from textual.containers import Container, Horizontal
+from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, RadioButton, RadioSet, Static
 
 from bloomfolio.storage.export import export_portfolio_json, export_portfolio_markdown
-from bloomfolio.tui.screens.base import BloomFolioScreen
 
 if TYPE_CHECKING:
     from textual.app import ComposeResult
@@ -18,8 +18,8 @@ if TYPE_CHECKING:
     from bloomfolio.domain.portfolio import Portfolio
 
 
-class ExportScreen(BloomFolioScreen):
-    """Export screen."""
+class ExportScreen(ModalScreen[None]):
+    """Export report modal overlay."""
 
     BINDINGS = [
         Binding("q", "quit", "Back", show=True),
@@ -43,7 +43,7 @@ class ExportScreen(BloomFolioScreen):
         super().__init__()
         self.portfolio = portfolio
 
-    def compose_content(self) -> ComposeResult:
+    def compose(self) -> ComposeResult:
         with Container():
             yield Label("Export Report", classes="title")
             yield Static(f"Portfolio: {self.portfolio.source_file_name}")
@@ -71,7 +71,15 @@ class ExportScreen(BloomFolioScreen):
         if event.button.id == "export-btn":
             self._do_export()
         elif event.button.id == "back-btn":
-            self.app.pop_screen()
+            self.dismiss()
+
+    def action_quit(self) -> None:
+        """Close modal."""
+        self.dismiss()
+
+    def action_escape(self) -> None:
+        """Close modal."""
+        self.dismiss()
 
     def _do_export(self) -> None:
         """Export report."""

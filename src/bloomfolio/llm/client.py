@@ -143,6 +143,7 @@ class LLMGateway:
             "model": model,
             "messages": [m.model_dump() for m in messages],
             "temperature": temperature,
+            "response_format": {"type": "json_object"},
         }
 
         async with httpx.AsyncClient(timeout=timeout) as client:

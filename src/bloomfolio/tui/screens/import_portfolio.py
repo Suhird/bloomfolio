@@ -1,4 +1,4 @@
-"""Import portfolio screen."""
+"""Import portfolio modal."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, VerticalScroll
+from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Static
 
 from bloomfolio.tui.modals.schema_help import SchemaHelpModal
-from bloomfolio.tui.screens.base import BloomFolioScreen
 
 if TYPE_CHECKING:
     from textual.app import ComposeResult
@@ -18,12 +18,15 @@ if TYPE_CHECKING:
     from bloomfolio.tui.app import BloomFolioApp
 
 
-class ImportPortfolioScreen(BloomFolioScreen):
-    """Portfolio import screen."""
+class ImportPortfolioScreen(ModalScreen[None]):
+    """Portfolio import modal overlay."""
 
     BINDINGS = [
         Binding("q", "quit", "Back", show=True),
         Binding("escape", "escape", "Back", show=True),
+        Binding("ctrl+i", "do_import", "Import", show=False),
+        Binding("ctrl+v", "do_validate", "Validate", show=False),
+        Binding("ctrl+h", "schema_help", "Schema", show=False),
     ]
 
     DEFAULT_CSS = """
@@ -52,7 +55,7 @@ class ImportPortfolioScreen(BloomFolioScreen):
     }
     """
 
-    def compose_content(self) -> ComposeResult:
+    def compose(self) -> ComposeResult:
         with Container():
             yield Static("Import Portfolio CSV", classes="title")
             yield Static("Enter the path to your Wealthsimple CSV export:")
@@ -64,9 +67,9 @@ class ImportPortfolioScreen(BloomFolioScreen):
             )
 
             with Horizontal():
-                yield Button("Import", variant="primary", id="import-btn")
-                yield Button("Validate Only", variant="default", id="validate-btn")
-                yield Button("Schema Help", variant="default", id="schema-help-btn")
+                yield Button("Import (Ctrl+I)", variant="primary", id="import-btn")
+                yield Button("Validate (Ctrl+V)", variant="default", id="validate-btn")
+                yield Button("Schema Help (Ctrl+H)", variant="default", id="schema-help-btn")
                 yield Button("Back (q)", variant="error", id="back-btn")
 
             yield Static("Status: Ready", classes="status", id="status")
@@ -85,7 +88,27 @@ class ImportPortfolioScreen(BloomFolioScreen):
         elif event.button.id == "schema-help-btn":
             app.push_screen(SchemaHelpModal())
         elif event.button.id == "back-btn":
-            app.pop_screen()
+            self.dismiss()
+
+    def action_do_import(self) -> None:
+        """Keyboard shortcut for Import."""
+        self._do_import()
+
+    def action_do_validate(self) -> None:
+        """Keyboard shortcut for Validate."""
+        self._do_validate()
+
+    def action_schema_help(self) -> None:
+        """Keyboard shortcut for Schema Help."""
+        self.app.push_screen(SchemaHelpModal())
+
+    def action_quit(self) -> None:
+        """Close modal."""
+        self.dismiss()
+
+    def action_escape(self) -> None:
+        """Close modal."""
+        self.dismiss()
 
     def _do_import(self) -> None:
         """Import the CSV file."""
@@ -97,6 +120,7 @@ class ImportPortfolioScreen(BloomFolioScreen):
             return
 
         import asyncio
+
         asyncio.create_task(self._import_async(path))
 
     def _do_validate(self) -> None:
@@ -109,6 +133,7 @@ class ImportPortfolioScreen(BloomFolioScreen):
             return
 
         import asyncio
+
         asyncio.create_task(self._validate_async(path))
 
     async def _import_async(self, path: str) -> None:
@@ -125,8 +150,7 @@ class ImportPortfolioScreen(BloomFolioScreen):
                 f"Imported {len(portfolio.holdings)} holdings from {portfolio.source_file_name}",
                 error=False,
             )
-            app.pop_screen()
-            app.action_portfolio()
+            self.dismiss()
         except Exception as e:
             self._update_status(f"Import failed: {e}", error=True)
 
@@ -162,5 +186,7 @@ class ImportPortfolioScreen(BloomFolioScreen):
         diag = self.query_one("#diagnostics", Static)
         lines = []
         for item in result.get_diagnostics()[:20]:
-            lines.append(f"{item.severity} row={item.row_number} field={item.field}: {item.message}")
+            lines.append(
+                f"{item.severity} row={item.row_number} field={item.field}: {item.message}"
+            )
         diag.update("\n".join(lines) if lines else "No diagnostics")
