@@ -1,0 +1,78 @@
+[project]
+name = "bloomfolio"
+version = "0.1.0"
+description = "Terminal Portfolio Intelligence - Bloomberg-inspired TUI for local AI-powered portfolio analysis"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "textual>=0.70.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "httpx>=0.27.0",
+    "anyio>=4.0.0",
+    "pandas>=2.0.0",
+    "numpy>=1.26.0",
+    "yfinance>=0.2.0",
+    "ta>=0.11.0",
+    "orjson>=3.9.0",
+    "aiosqlite>=0.20.0",
+    "tenacity>=8.2.0",
+    "structlog>=24.0.0",
+    "typer>=0.12.0",
+    "platformdirs>=4.0.0",
+    "python-dotenv>=1.0.0",
+    "feedparser>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-textual-snapshot>=1.0.0",
+    "mypy>=1.9.0",
+    "ruff>=0.4.0",
+    "freezegun>=1.4.0",
+]
+tradingagents = [
+    "tradingagents>=0.2.0",
+]
+
+[project.scripts]
+bloomfolio = "bloomfolio.cli.main:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bloomfolio"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM", "TCH"]
+ignore = ["E501", "TC001", "TC002", "TC003"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+show_error_codes = true
+exclude = ["tests/"]
+
+[[tool.mypy.overrides]]
+module = ["yfinance.*", "ta.*", "feedparser.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]

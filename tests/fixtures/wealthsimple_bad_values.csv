@@ -1,0 +1,4 @@
+ticker,security_name,quantity,currency,account_name,market_value,book_cost
+VFV,Vanguard S&P 500 Index ETF,five,CAD,TFSA,3450.25,3100.00
+,-,-,USD,Personal,-100,-
+AAPL,Apple Inc,10,GBP,,invalid,

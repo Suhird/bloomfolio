@@ -1,0 +1,6 @@
+ticker,security_name,quantity,currency,account_name,market_value,book_cost,average_cost,current_price,asset_type,exchange
+VFV,Vanguard S&P 500 Index ETF,25.5,CAD,TFSA,3450.25,3100.00,121.57,135.30,ETF,TSX
+XEQT,iShares Core Equity ETF,100,CAD,RRSP,5890.00,5500.00,55.00,58.90,ETF,TSX
+AAPL,Apple Inc.,10,USD,Personal,1850.00,1600.00,160.00,185.00,stock,NASDAQ
+SHOP.TO,Shopify Inc.,5,CAD,TFSA,450.00,400.00,80.00,90.00,stock,TSX
+CASH,Cash,1000,CAD,TFSA,1000.00,1000.00,1.00,1.00,cash,
