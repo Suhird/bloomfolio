@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from textual.binding import Binding
 from textual.containers import Grid, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Static
@@ -48,6 +49,11 @@ Press [b]q[/] or [b]Esc[/] to close this help.
 
 class HelpModal(ModalScreen[None]):
     """Help modal screen."""
+
+    BINDINGS = [
+        Binding("q", "quit", "Close", show=False),
+        Binding("escape", "escape", "Close", show=False),
+    ]
 
     DEFAULT_CSS = """
     HelpModal {

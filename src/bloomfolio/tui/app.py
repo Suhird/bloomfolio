@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from textual.app import App
 from textual.binding import Binding
@@ -46,6 +46,7 @@ class BloomFolioApp(App[None]):
     def __init__(self) -> None:
         super().__init__()
         self.settings = get_settings()
+        self.analysis_results: dict[str, Any] = {}
         configure_logging()
         logger.info("bloomfolio_app_initializing")
 
@@ -126,12 +127,14 @@ class BloomFolioApp(App[None]):
 
     def action_import_csv(self) -> None:
         """Import portfolio CSV."""
+        self.log_ui("Opening import screen...")
         from bloomfolio.tui.screens.import_portfolio import ImportPortfolioScreen
 
         self.push_screen(ImportPortfolioScreen())
 
     def action_portfolio(self) -> None:
         """Show portfolio overview."""
+        self.log_ui("Opening portfolio overview...")
         from bloomfolio.tui.screens.portfolio_overview import PortfolioOverviewScreen
 
         self.push_screen(PortfolioOverviewScreen())
@@ -139,17 +142,64 @@ class BloomFolioApp(App[None]):
     def action_run_analysis(self) -> None:
         """Run analysis."""
         if self.current_portfolio is None:
+            self.log_ui("[yellow]No portfolio imported. Press 'i' to import.[/yellow]")
             self.notify("No portfolio imported. Press 'i' to import.", severity="warning")
             return
+        self.log_ui("Opening agent monitor...")
         from bloomfolio.tui.screens.agent_monitor import AgentMonitorScreen
 
         self.push_screen(AgentMonitorScreen(self.current_portfolio))
 
+    def action_agent_monitor(self) -> None:
+        """Open agent monitor (same as run analysis for now)."""
+        self.action_run_analysis()
+
+    def action_validate_csv(self) -> None:
+        """Validate current portfolio source file or open import screen."""
+        portfolio = self.current_portfolio
+        if portfolio is not None and portfolio.source_file_name:
+            self.log_ui(f"Validating {portfolio.source_file_name}...")
+            import asyncio
+
+            from bloomfolio.portfolio.validator import validate_csv_file
+
+            async def _validate(path: str) -> None:
+                try:
+                    result = await validate_csv_file(path)
+                    if result.valid:
+                        self.log_ui(
+                            f"[green]Valid: {result.row_count} rows[/green]"
+                        )
+                        self.notify(
+                            f"Valid: {result.row_count} rows",
+                            severity="information",
+                        )
+                    else:
+                        self.log_ui(
+                            f"[red]Invalid: {len(result.errors)} errors[/red]"
+                        )
+                        self.notify(
+                            f"Invalid: {len(result.errors)} errors",
+                            severity="error",
+                        )
+                except Exception as e:
+                    self.log_ui(f"[red]Validation failed: {e}[/red]")
+                    self.notify(f"Validation failed: {e}", severity="error")
+
+            asyncio.create_task(_validate(portfolio.source_file_name))
+        else:
+            self.log_ui("No portfolio loaded — opening import screen")
+            from bloomfolio.tui.screens.import_portfolio import ImportPortfolioScreen
+
+            self.push_screen(ImportPortfolioScreen())
+
     def action_export(self) -> None:
         """Export report."""
         if self.current_portfolio is None:
+            self.log_ui("[yellow]No portfolio to export. Press 'i' to import.[/yellow]")
             self.notify("No portfolio to export. Press 'i' to import.", severity="warning")
             return
+        self.log_ui("Opening export screen...")
         from bloomfolio.tui.screens.export import ExportScreen
 
         self.push_screen(ExportScreen(self.current_portfolio))
@@ -160,7 +210,24 @@ class BloomFolioApp(App[None]):
 
     def action_clear_logs(self) -> None:
         """Clear log panel."""
+        try:
+            from bloomfolio.tui.widgets.log_panel import CommandLog
+
+            log = self.query_one("#command-log", CommandLog)
+            log.clear()
+        except Exception:
+            pass
         self.notify("Logs cleared", severity="information")
+
+    def log_ui(self, message: str) -> None:
+        """Write a message to the bottom command log on the current screen."""
+        try:
+            from bloomfolio.tui.widgets.log_panel import CommandLog
+
+            log = self.query_one(CommandLog)
+            log.write_line(message)
+        except Exception:
+            pass
 
     def watch_current_portfolio(self, portfolio: Portfolio | None) -> None:
         """React to portfolio changes."""

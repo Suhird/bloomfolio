@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
-from textual.screen import Screen
 from textual.widgets import DataTable, Label, Static
 
-from bloomfolio.tui.widgets.footer import BloomFolioFooter
+from bloomfolio.tui.screens.base import BloomFolioScreen
 
 if TYPE_CHECKING:
     from textual.app import ComposeResult
@@ -17,8 +17,17 @@ if TYPE_CHECKING:
     from bloomfolio.tui.app import BloomFolioApp
 
 
-class PortfolioOverviewScreen(Screen[None]):
+class PortfolioOverviewScreen(BloomFolioScreen):
     """Portfolio overview screen."""
+
+    BINDINGS = [
+        Binding("i", "import_csv", "Import", show=True),
+        Binding("r", "run_analysis", "Run", show=True),
+        Binding("a", "agent_monitor", "Agents", show=True),
+        Binding("x", "export", "Export", show=True),
+        Binding("?", "help", "Help", show=True),
+        Binding("q", "quit", "Quit", show=True),
+    ]
 
     DEFAULT_CSS = """
     PortfolioOverviewScreen {
@@ -41,7 +50,7 @@ class PortfolioOverviewScreen(Screen[None]):
     }
     """
 
-    def compose(self) -> ComposeResult:
+    def compose_content(self) -> ComposeResult:
         app: BloomFolioApp = self.app  # type: ignore[assignment]
         portfolio: Portfolio | None = app.current_portfolio
 
@@ -73,8 +82,6 @@ class PortfolioOverviewScreen(Screen[None]):
                     yield Static(f"Tickers: {len(portfolio.get_tickers())}")
                 else:
                     yield Static("No portfolio imported.")
-
-        yield BloomFolioFooter()
 
     def on_mount(self) -> None:
         """Focus the table on mount."""

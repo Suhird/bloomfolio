@@ -19,6 +19,37 @@ def test_normalize_columns_maps_aliases() -> None:
     assert result["Market Value"] == "market_value"
 
 
+def test_normalize_columns_maps_wealthsimple_aliases() -> None:
+    headers = [
+        "Symbol",
+        "Quantity",
+        "Account Name",
+        "Name",
+        "Security Type",
+        "Exchange",
+        "Market Price",
+        "Market Value",
+        "Book Value (CAD)",
+        "Book Value (Market)",
+        "Market Value Currency",
+        "Market Unrealized Returns",
+    ]
+    result = normalize_columns(headers)
+    assert result["Symbol"] == "ticker"
+    assert result["Quantity"] == "quantity"
+    assert result["Account Name"] == "account_name"
+    assert result["Name"] == "security_name"
+    assert result["Security Type"] == "asset_type"
+    assert result["Exchange"] == "exchange"
+    assert result["Market Price"] == "current_price"
+    assert result["Market Value"] == "market_value"
+    assert result["Book Value (CAD)"] == "book_cost"
+    # Only the first book_cost alias is mapped; the second becomes unknown
+    assert result["Book Value (Market)"] == "book value market"
+    assert result["Market Value Currency"] == "currency"
+    assert result["Market Unrealized Returns"] == "unrealized_gain_loss"
+
+
 def test_normalize_columns_ignores_unknown() -> None:
     headers = ["ticker", "quantity", "random_column"]
     result = normalize_columns(headers)

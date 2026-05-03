@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import csv
 from decimal import Decimal
 from pathlib import Path
@@ -52,6 +51,9 @@ async def import_csv(path: str) -> Portfolio:
             holdings: list[Holding] = []
 
             for i, row in enumerate(reader, start=2):
+                # Skip empty rows / Wealthsimple footer rows
+                if _is_empty_row(row, normalized):
+                    continue
                 try:
                     holding = _row_to_holding(row, normalized, i)
                     holdings.append(holding)
@@ -97,10 +99,7 @@ def _row_to_holding(
         raise ValueError("Negative quantity")
 
     asset_type_str = (_get_field(row, normalized, "asset_type", "") or "").strip().lower()
-    asset_type = AssetType.UNKNOWN
-    if asset_type_str:
-        with contextlib.suppress(ValueError):
-            asset_type = AssetType(asset_type_str)
+    asset_type = _map_asset_type(asset_type_str)
 
     market_value = _parse_decimal(_get_field(row, normalized, "market_value", ""))
     book_cost = _parse_decimal(_get_field(row, normalized, "book_cost", ""))
@@ -131,6 +130,39 @@ def _row_to_holding(
         unrealized_gain_loss_pct=unrealized_gl_pct,
         source_row_number=row_number,
     )
+
+
+def _map_asset_type(raw: str) -> AssetType:
+    """Map Wealthsimple asset type strings to AssetType enum."""
+    if not raw:
+        return AssetType.UNKNOWN
+    mapping: dict[str, AssetType] = {
+        "exchange_traded_fund": AssetType.ETF,
+        "equity": AssetType.STOCK,
+        "precious_metal": AssetType.OTHER,
+        "mutual_fund": AssetType.OTHER,
+        "fixed_income": AssetType.BOND,
+        "bond": AssetType.BOND,
+        "cash": AssetType.CASH,
+        "crypto": AssetType.CRYPTO,
+    }
+    return mapping.get(raw, AssetType.UNKNOWN)
+
+
+def _is_empty_row(
+    row: dict[str, str],
+    normalized: dict[str, str],
+) -> bool:
+    """Skip rows with no ticker and no quantity (empty/footer rows)."""
+    ticker = ""
+    quantity = ""
+    for raw, canonical in normalized.items():
+        value = (row.get(raw) or "").strip()
+        if canonical == "ticker":
+            ticker = value
+        elif canonical == "quantity":
+            quantity = value
+    return ticker == "" and quantity == ""
 
 
 def _get_field(

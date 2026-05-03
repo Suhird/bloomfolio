@@ -29,8 +29,8 @@ class Settings(BaseSettings):
     # Ollama settings
     ollama_base_url: str = "http://localhost:11434/v1"
     ollama_api_key: str = "ollama"
-    ollama_quick_model: str = "gemma4:26b"
-    ollama_deep_model: str = "gemma4:26b"
+    ollama_quick_model: str = "gemma4:latest"
+    ollama_deep_model: str = "gemma4:latest"
 
     # OpenRouter settings
     openrouter_base_url: str = "https://openrouter.ai/api/v1"

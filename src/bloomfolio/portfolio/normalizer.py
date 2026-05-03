@@ -34,6 +34,10 @@ COLUMN_ALIASES: dict[str, list[str]] = {
         "currency",
         "ccy",
         "currency code",
+        "market value currency",
+        "market price currency",
+        "book value currency cad",
+        "book value currency market",
     ],
     "account_name": [
         "account",
@@ -56,6 +60,8 @@ COLUMN_ALIASES: dict[str, list[str]] = {
         "adjusted cost base",
         "acb",
         "total cost",
+        "book value cad",
+        "book value market",
     ],
     "average_cost": [
         "average cost",
@@ -99,6 +105,7 @@ COLUMN_ALIASES: dict[str, list[str]] = {
         "unrealized gain/loss",
         "gain loss",
         "gain/loss",
+        "market unrealized returns",
     ],
     "unrealized_gain_loss_pct": [
         "unrealized gain loss pct",

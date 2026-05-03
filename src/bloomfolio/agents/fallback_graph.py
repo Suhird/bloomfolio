@@ -6,6 +6,7 @@ package is not available.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from bloomfolio.agents.prompts import (
@@ -39,6 +40,34 @@ from bloomfolio.observability.logging import get_logger
 logger = get_logger(__name__)
 
 
+def _safe_list(obj: Any, fallback: list[str] | None = None) -> list[str]:
+    """Ensure obj is a list of strings."""
+    if fallback is None:
+        fallback = []
+    if isinstance(obj, list):
+        return [str(item) for item in obj]
+    if isinstance(obj, str):
+        return [obj]
+    return fallback
+
+
+def _safe_str(obj: Any, fallback: str = "") -> str:
+    """Ensure obj is a string."""
+    if isinstance(obj, str):
+        return obj
+    if obj is None:
+        return fallback
+    return str(obj)
+
+
+def _safe_float(obj: Any, fallback: float = 0.5) -> float:
+    """Ensure obj is a float."""
+    try:
+        return float(obj)
+    except Exception:
+        return fallback
+
+
 class FallbackAnalysisGraph:
     """Internal fallback analysis graph compatible with TradingAgents workflow."""
 
@@ -54,6 +83,7 @@ class FallbackAnalysisGraph:
         news_items: list[dict[str, Any]],
         sentiment_data: dict[str, Any],
         progress_callback: Any | None = None,
+        should_cancel: Callable[[], bool] | None = None,
     ) -> TickerAnalysisResult:
         """Run full multi-agent analysis on a ticker.
 
@@ -85,6 +115,10 @@ class FallbackAnalysisGraph:
         ]
 
         for stage_name, _stage in stages:
+            if should_cancel and should_cancel():
+                result.errors.append("Cancelled by user")
+                break
+
             if progress_callback:
                 await progress_callback(ticker, stage_name)
 
@@ -141,8 +175,8 @@ class FallbackAnalysisGraph:
                 ticker=ticker,
                 agent_name="Fundamental Analyst",
                 stage=AnalysisStage.FUNDAMENTAL,
-                summary=output.summary,
-                key_points=output.strengths + output.weaknesses,
+                summary=_safe_str(getattr(output, "summary", "")),
+                key_points=_safe_list(getattr(output, "strengths", [])) + _safe_list(getattr(output, "weaknesses", [])),
                 confidence=0.7,
             )
 
@@ -157,8 +191,8 @@ class FallbackAnalysisGraph:
                 ticker=ticker,
                 agent_name="Technical Analyst",
                 stage=AnalysisStage.TECHNICAL,
-                summary=output.summary,
-                key_points=[output.trend] + output.support_levels + output.resistance_levels,
+                summary=_safe_str(getattr(output, "summary", "")),
+                key_points=[_safe_str(getattr(output, "trend", ""))] + _safe_list(getattr(output, "support_levels", [])) + _safe_list(getattr(output, "resistance_levels", [])),
                 confidence=0.6,
             )
 
@@ -173,8 +207,8 @@ class FallbackAnalysisGraph:
                 ticker=ticker,
                 agent_name="News Analyst",
                 stage=AnalysisStage.NEWS,
-                summary=output.summary,
-                key_points=output.key_headlines + output.catalysts,
+                summary=_safe_str(getattr(output, "summary", "")),
+                key_points=_safe_list(getattr(output, "key_headlines", [])) + _safe_list(getattr(output, "catalysts", [])),
                 confidence=0.5,
             )
 
@@ -189,8 +223,11 @@ class FallbackAnalysisGraph:
                 ticker=ticker,
                 agent_name="Sentiment Analyst",
                 stage=AnalysisStage.SENTIMENT,
-                summary=output.summary,
-                key_points=[f"Overall: {output.overall_sentiment}", f"Score: {output.sentiment_score}"],
+                summary=_safe_str(getattr(output, "summary", "")),
+                key_points=[
+                    f"Overall: {_safe_str(getattr(output, 'overall_sentiment', 'neutral'))}",
+                    f"Score: {_safe_float(getattr(output, 'sentiment_score', 0.0)):.2f}",
+                ],
                 confidence=0.5,
             )
 
@@ -205,9 +242,9 @@ class FallbackAnalysisGraph:
                 ticker=ticker,
                 agent_name="Bull Researcher",
                 stage=AnalysisStage.BULL_RESEARCH,
-                summary=output.thesis,
-                key_points=output.key_arguments + output.upside_scenarios,
-                confidence=output.confidence,
+                summary=_safe_str(getattr(output, "thesis", "")),
+                key_points=_safe_list(getattr(output, "key_arguments", [])) + _safe_list(getattr(output, "upside_scenarios", [])),
+                confidence=_safe_float(getattr(output, "confidence", 0.5)),
             )
 
         elif stage == "bear":
@@ -221,9 +258,9 @@ class FallbackAnalysisGraph:
                 ticker=ticker,
                 agent_name="Bear Researcher",
                 stage=AnalysisStage.BEAR_RESEARCH,
-                summary=output.thesis,
-                key_points=output.key_arguments + output.downside_scenarios,
-                confidence=output.confidence,
+                summary=_safe_str(getattr(output, "thesis", "")),
+                key_points=_safe_list(getattr(output, "key_arguments", [])) + _safe_list(getattr(output, "downside_scenarios", [])),
+                confidence=_safe_float(getattr(output, "confidence", 0.5)),
             )
 
         elif stage == "trader":
@@ -239,9 +276,9 @@ class FallbackAnalysisGraph:
                 ticker=ticker,
                 agent_name="Trader",
                 stage=AnalysisStage.TRADER_SYNTHESIS,
-                summary=output.summary,
-                key_points=output.key_factors,
-                confidence=output.confidence,
+                summary=_safe_str(getattr(output, "summary", "")),
+                key_points=_safe_list(getattr(output, "key_factors", [])),
+                confidence=_safe_float(getattr(output, "confidence", 0.5)),
             )
 
         elif stage == "risk":
@@ -255,8 +292,8 @@ class FallbackAnalysisGraph:
                 ticker=ticker,
                 agent_name="Risk Manager",
                 stage=AnalysisStage.RISK_REVIEW,
-                summary=output.summary,
-                key_points=output.risk_factors + output.mitigation_notes,
+                summary=_safe_str(getattr(output, "summary", "")),
+                key_points=_safe_list(getattr(output, "risk_factors", [])) + _safe_list(getattr(output, "mitigation_notes", [])),
                 confidence=0.6,
             )
 
@@ -270,14 +307,19 @@ class FallbackAnalysisGraph:
                 temperature=0.3,
             )
             # Store the raw dict for decision building
-            analyses["portfolio_manager"] = output.model_dump()
+            raw_dict: dict[str, Any] = {}
+            if hasattr(output, "model_dump"):
+                raw_dict = output.model_dump()
+            elif isinstance(output, dict):
+                raw_dict = output
+            analyses["portfolio_manager"] = raw_dict
             return AnalystReport(
                 ticker=ticker,
                 agent_name="Portfolio Manager",
                 stage=AnalysisStage.PORTFOLIO_MANAGER,
-                summary=output.thesis,
-                key_points=output.risk_notes + output.portfolio_context_notes,
-                confidence=output.confidence,
+                summary=_safe_str(getattr(output, "thesis", "")),
+                key_points=_safe_list(getattr(output, "risk_notes", [])) + _safe_list(getattr(output, "portfolio_context_notes", [])),
+                confidence=_safe_float(getattr(output, "confidence", 0.5)),
             )
 
         return None

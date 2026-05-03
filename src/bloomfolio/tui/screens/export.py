@@ -5,12 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from textual.binding import Binding
 from textual.containers import Container, Horizontal
-from textual.screen import Screen
 from textual.widgets import Button, Input, Label, RadioButton, RadioSet, Static
 
 from bloomfolio.storage.export import export_portfolio_json, export_portfolio_markdown
-from bloomfolio.tui.widgets.footer import BloomFolioFooter
+from bloomfolio.tui.screens.base import BloomFolioScreen
 
 if TYPE_CHECKING:
     from textual.app import ComposeResult
@@ -18,8 +18,13 @@ if TYPE_CHECKING:
     from bloomfolio.domain.portfolio import Portfolio
 
 
-class ExportScreen(Screen[None]):
+class ExportScreen(BloomFolioScreen):
     """Export screen."""
+
+    BINDINGS = [
+        Binding("q", "quit", "Back", show=True),
+        Binding("escape", "escape", "Back", show=True),
+    ]
 
     DEFAULT_CSS = """
     ExportScreen {
@@ -38,7 +43,7 @@ class ExportScreen(Screen[None]):
         super().__init__()
         self.portfolio = portfolio
 
-    def compose(self) -> ComposeResult:
+    def compose_content(self) -> ComposeResult:
         with Container():
             yield Label("Export Report", classes="title")
             yield Static(f"Portfolio: {self.portfolio.source_file_name}")
@@ -61,8 +66,6 @@ class ExportScreen(Screen[None]):
                 yield Button("Back (q)", variant="error", id="back-btn")
 
             yield Static("", id="status")
-
-        yield BloomFolioFooter()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "export-btn":

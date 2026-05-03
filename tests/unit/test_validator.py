@@ -33,3 +33,22 @@ async def test_bad_values_reports_errors() -> None:
     result = await validate_csv_file(str(path))
     assert result.valid is False
     assert any("quantity" in (e.field or "") for e in result.errors)
+
+
+@pytest.mark.asyncio
+async def test_real_wealthsimple_export_passes() -> None:
+    path = FIXTURES_DIR / "wealthsimple_real_export.csv"
+    result = await validate_csv_file(str(path))
+    assert result.valid is True
+    assert result.row_count == 8
+    assert "Symbol" not in result.unknown_columns
+
+
+@pytest.mark.asyncio
+async def test_real_wealthsimple_export_skips_footer_row() -> None:
+    path = FIXTURES_DIR / "wealthsimple_real_export.csv"
+    result = await validate_csv_file(str(path))
+    # Footer row should not trigger an empty-ticker error
+    assert not any(
+        "empty" in e.message.lower() and e.field == "ticker" for e in result.errors
+    )

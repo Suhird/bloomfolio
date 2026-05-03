@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from textual.binding import Binding
 from textual.containers import Container, Horizontal, VerticalScroll
-from textual.screen import Screen
 from textual.widgets import Button, Input, Static
 
 from bloomfolio.tui.modals.schema_help import SchemaHelpModal
-from bloomfolio.tui.widgets.footer import BloomFolioFooter
+from bloomfolio.tui.screens.base import BloomFolioScreen
 
 if TYPE_CHECKING:
     from textual.app import ComposeResult
@@ -18,8 +18,13 @@ if TYPE_CHECKING:
     from bloomfolio.tui.app import BloomFolioApp
 
 
-class ImportPortfolioScreen(Screen[None]):
+class ImportPortfolioScreen(BloomFolioScreen):
     """Portfolio import screen."""
+
+    BINDINGS = [
+        Binding("q", "quit", "Back", show=True),
+        Binding("escape", "escape", "Back", show=True),
+    ]
 
     DEFAULT_CSS = """
     ImportPortfolioScreen {
@@ -43,11 +48,11 @@ class ImportPortfolioScreen(Screen[None]):
     ImportPortfolioScreen .diagnostics {
         margin: 1 0;
         height: auto;
-        color: $red;
+        color: $error;
     }
     """
 
-    def compose(self) -> ComposeResult:
+    def compose_content(self) -> ComposeResult:
         with Container():
             yield Static("Import Portfolio CSV", classes="title")
             yield Static("Enter the path to your Wealthsimple CSV export:")
@@ -69,8 +74,6 @@ class ImportPortfolioScreen(Screen[None]):
 
             with VerticalScroll(id="results"):
                 yield Static("Import results will appear here.")
-
-        yield BloomFolioFooter()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         app: BloomFolioApp = self.app  # type: ignore[assignment]

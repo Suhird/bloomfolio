@@ -122,6 +122,7 @@ class AnalysisRunner:
             news_items=news_items,
             sentiment_data=sentiment_data,
             progress_callback=progress_callback,
+            should_cancel=lambda: self._cancelled,
         )
 
     def cancel(self) -> None:

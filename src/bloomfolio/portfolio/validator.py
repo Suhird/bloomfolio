@@ -92,6 +92,8 @@ def _validate_sync(path: str) -> ValidationResult:
             # Validate rows
             row_count = 0
             for i, row in enumerate(reader, start=2):
+                if _is_empty_or_footer_row(row, normalized):
+                    continue
                 row_count += 1
                 _validate_row(row, normalized, i, errors, warnings)
 
@@ -136,6 +138,22 @@ def _validate_sync(path: str) -> ValidationResult:
     return result
 
 
+def _is_empty_or_footer_row(
+    row: dict[str, str],
+    normalized: dict[str, str],
+) -> bool:
+    """Detect empty rows or Wealthsimple footer rows that lack ticker and quantity."""
+    ticker = ""
+    quantity = ""
+    for raw, canonical in normalized.items():
+        value = (row.get(raw) or "").strip()
+        if canonical == "ticker":
+            ticker = value
+        elif canonical == "quantity":
+            quantity = value
+    return ticker == "" and quantity == ""
+
+
 def _validate_row(
     row: dict[str, str],
     normalized: dict[str, str],
@@ -145,7 +163,7 @@ def _validate_row(
 ) -> None:
     """Validate a single row."""
     for raw, canonical in normalized.items():
-        value = row.get(raw, "").strip()
+        value = (row.get(raw) or "").strip()
 
         if canonical == "ticker":
             if not value:

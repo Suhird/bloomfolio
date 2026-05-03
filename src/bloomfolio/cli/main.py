@@ -143,7 +143,7 @@ def doctor() -> None:
         typer.echo(f"[FAIL] Data directory not writable: {e}")
 
     typer.echo("-" * 40)
-    typer.echo("Run 'bloomfolio' to start the TUI.")
+    typer.echo("Run 'bloomfolio tui' to start the TUI.")
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ ollama serve
 cp .env.example .env
 
 uv run bloomfolio doctor
-uv run bloomfolio
+uv run bloomfolio tui
 ```
 
 ## Features

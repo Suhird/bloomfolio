@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from textual.binding import Binding
 from textual.containers import Grid, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Static
@@ -57,6 +58,11 @@ VFV,Vanguard S&P 500 Index ETF,25.5,CAD,TFSA,3450.25,3100.00,121.57,135.30,ETF,T
 
 class SchemaHelpModal(ModalScreen[None]):
     """Schema help modal screen."""
+
+    BINDINGS = [
+        Binding("q", "quit", "Close", show=False),
+        Binding("escape", "escape", "Close", show=False),
+    ]
 
     DEFAULT_CSS = """
     SchemaHelpModal {

@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from textual.binding import Binding
 from textual.containers import Container, Vertical
-from textual.screen import Screen
 from textual.widgets import Button, Label, Static
 
-from bloomfolio.tui.widgets.footer import BloomFolioFooter
+from bloomfolio.tui.screens.base import BloomFolioScreen
 
 if TYPE_CHECKING:
     from textual.app import ComposeResult
@@ -16,8 +16,14 @@ if TYPE_CHECKING:
     from bloomfolio.tui.app import BloomFolioApp
 
 
-class StartupScreen(Screen[None]):
+class StartupScreen(BloomFolioScreen):
     """Application startup screen."""
+
+    BINDINGS = [
+        Binding("i", "import_csv", "Import", show=True),
+        Binding("?", "help", "Help", show=True),
+        Binding("q", "quit", "Quit", show=True),
+    ]
 
     DEFAULT_CSS = """
     StartupScreen {
@@ -62,7 +68,7 @@ class StartupScreen(Screen[None]):
     }
     """
 
-    def compose(self) -> ComposeResult:
+    def compose_content(self) -> ComposeResult:
         app: BloomFolioApp = self.app  # type: ignore[assignment]
 
         with Container():
@@ -91,8 +97,6 @@ class StartupScreen(Screen[None]):
                 "Research & educational analysis only. Not financial advice.",
                 classes="disclaimer",
             )
-
-        yield BloomFolioFooter()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         app: BloomFolioApp = self.app  # type: ignore[assignment]
